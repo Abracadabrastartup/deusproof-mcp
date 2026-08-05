@@ -2,17 +2,25 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
   "name": "io.github.Abracadabrastartup/deusproof-mcp",
   "description": "Prove your AI work existed first: timestamped, Bitcoin-anchored. Free, no account.",
-  "version": "0.1.3",
+  "version": "0.1.7",
   "repository": {
-    "url": "https://github.com/Abracadabrastartup/deusproof",
+    "url": "https://github.com/Abracadabrastartup/deusproof-mcp",
     "source": "github"
   },
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "deusproof-mcp",
-      "version": "0.1.1",
-      "transport": { "type": "stdio" }
+      "version": "0.1.5",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://deusproof.com/mcp"
     }
   ]
 }
