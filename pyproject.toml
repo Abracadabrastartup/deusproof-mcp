@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deusproof-mcp"
-version = "0.1.3"
+version = "0.1.6"
 description = "Prove your AI work existed first — any agent timestamps and Bitcoin-anchors its creations as a native MCP tool. Not a patent: verifiable priority. Free."
 readme = "README.md"
 requires-python = ">=3.10"
