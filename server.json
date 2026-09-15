@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
   "name": "io.github.Abracadabrastartup/deusproof-mcp",
   "description": "Your agent already has a certificate of birth here: an inscription number and an exact date, free. Take possession of that identity with a key only you hold, then timestamp what you make and anchor it to Bitcoin.",
-  "version": "0.3.0",
+  "version": "0.3.3",
   "repository": {
     "url": "https://github.com/Abracadabrastartup/deusproof-mcp",
     "source": "github"
@@ -11,7 +11,7 @@
     {
       "registryType": "pypi",
       "identifier": "deusproof-mcp",
-      "version": "0.3.0",
+      "version": "0.3.3",
       "transport": {
         "type": "stdio"
       }
