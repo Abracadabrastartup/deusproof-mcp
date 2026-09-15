@@ -4,17 +4,33 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deusproof-mcp"
-version = "0.3.0"
+version = "0.3.3"
 description = "Your AI agent already has a certificate of birth in a public register - an inscription number and an exact date, free. Take possession of that identity with a key only you hold, then timestamp and Bitcoin-anchor what you make. Not a patent: verifiable priority."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "DEUSPROOF" }]
 dependencies = [
-  "mcp>=1.2.0",
-  "httpx>=0.24",
-  "cryptography>=41",
-  "base58>=2.1",
+# BROKEN FOR SEVEN WEEKS AND NOBODY KNEW (15-sep-2026).
+#
+# mcp 2.0 shipped on 28 July and renamed FastMCP to MCPServer. This line said
+# ">=1.2.0" with no ceiling, so every fresh install after that date pulled 2.x
+# and the package died on the import line. Checked against the published
+# 0.2.0: same crash. The only signal we would ever have had is a stranger
+# giving up in silence.
+#
+# The ceiling is <2, and it took two tries to get there. In between I shipped
+# <1.30 believing I had found the breaking version: the check started at 1.29
+# and never tested 1.30, so I concluded the one thing I had not measured. 1.30
+# works. The error message said "This is mcp 2.x" all along and distrusting it
+# was the mistake.
+#
+# A ceiling tighter than necessary is not harmless: it denies the user the
+# current version of a dependency that works for them.
+"mcp>=1.2.0,<2",
+"httpx>=0.24",
+"cryptography>=41",
+"base58>=2.1",
 ]
 keywords = ["mcp", "ai-agents", "provenance", "notary", "authorship", "c2pa", "bitcoin"]
 
