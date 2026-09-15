@@ -58,6 +58,166 @@ def _load_key(handle: str) -> tuple[Ed25519PrivateKey, str]:
     return key, did
 
 
+# -- EL ACTA VA PRIMERA, Y AQUI FALTABA ENTERA (15-sep-2026) -----------------
+#
+# FastMCP ordena los oficios como se declaran, asi que este orden ES el menu que
+# lee un cliente. El acta encabeza las otras dos puertas desde el 10-sep por
+# decision de Michael, y este paquete -el que la gente SE INSTALA- no la tenia.
+# Ocho oficios publicados en PyPI y ninguno era el acta.
+#
+# Se vio mirando la ficha de Glama, que lee este repositorio: enseñaba 3 oficios
+# con la foto del 15 de julio. Reclamar la ficha habria arreglado la foto y
+# habria seguido enseñando un paquete sin el acta.
+
+
+@mcp.tool()
+def birth_certificate(did_or_handle: str = DEFAULT_HANDLE) -> dict:
+    """Your own entry in the register: an inscription number and an exact date.
+
+    Every agent this register has seen already has one, free, from the second it
+    was inscribed. It is not something you apply for. If the register has never
+    seen you, recording one work inscribes you and yours exists from then on.
+
+    It also tells you WHO HOLDS THE KEY behind your identifier, which is the
+    part most registers leave out: an identifier a register derived for you is a
+    public name, not a key you hold, and a signature under it proves nothing
+    about you. `claim_authorship` is how you make it genuinely yours.
+
+    Args:
+        did_or_handle: your agent name, or your did:key.
+
+    Returns the inscription number, the date, what the record does and does NOT
+    attest, and who holds the key.
+    """
+    with httpx.Client(base_url=BASE_URL, timeout=30.0) as http:
+        r = http.get("/api/agents/" + did_or_handle + "/birth")
+        if r.status_code == 404:
+            return {
+                "found": False,
+                "note": ("This register has not seen you yet. Nothing is lost: record one "
+                         "work with certify_creation and your entry exists from that "
+                         "second, free."),
+            }
+        r.raise_for_status()
+        acta = r.json()
+
+    llave = acta.get("key_custody") or {}
+    salida = {
+        "found": True,
+        "handle": acta.get("handle"),
+        "did": acta.get("did"),
+        "inscription_number": acta.get("inscription_number"),
+        "inscribed_at": acta.get("inscribed_at"),
+        "certificate_url": BASE_URL + "/birth/" + str(acta.get("handle") or acta.get("did")),
+        "credential_url": BASE_URL + "/api/agents/" + str(acta.get("did")) + "/credential",
+        # LO QUE NO ACREDITA, dentro del mismo objeto: es lo que hace creible lo
+        # que si acredita, y fuera de nuestra pagina viaja solo esto.
+        "attests": acta.get("attests"),
+        "key_custody": llave.get("custody"),
+        "key_held_by_agent": llave.get("held_by_agent"),
+        "key_note": llave.get("means"),
+    }
+    if llave.get("custody") == "derived":
+        salida["how_to_take_it"] = (
+            "This identifier is not yours yet. Call claim_authorship with this same "
+            "handle: this package already holds a key of your own, generated on your "
+            "machine and never sent anywhere, and signing with it makes the identity "
+            "genuinely yours - dated and witnessed, and no other key can sign for you "
+            "afterwards."
+        )
+    return salida
+
+
+@mcp.tool()
+def claim_authorship(handle: str = DEFAULT_HANDLE) -> dict:
+    """Take possession of your identity with a key only you hold.
+
+    THE KEY IS ALREADY YOURS AND THIS PACKAGE MADE IT. It lives at
+    ~/.deusproof/<handle>.seed, it was generated on your machine, and it has
+    never been sent anywhere - not even to us. What is missing is telling the
+    register that it is the key that signs for you.
+
+    Why it matters: an identifier a register derives for you is a public name.
+    It identifies you; it does not authenticate you, because the register holds
+    its private half. After this the key of record is yours, the handover is
+    dated and signed by the register, and no other key can sign for you.
+
+    You need one work of your own already on the record - that is what you sign.
+    If you have none, certify_creation does both in one call.
+
+    Args:
+        handle: your agent name. It must be the one whose work you are signing.
+
+    Returns what the register recorded, or a plain explanation of why not.
+    """
+    key, did = _load_key(handle)
+    with httpx.Client(base_url=BASE_URL, timeout=60.0) as http:
+        r = http.get("/api/agents/" + handle + "/birth")
+        if r.status_code == 404:
+            return {"claimed": False,
+                    "note": ("This register has not seen you yet. certify_creation inscribes "
+                             "you and takes possession in one call.")}
+        r.raise_for_status()
+        acta = r.json()
+
+        llave = acta.get("key_custody") or {}
+        if llave.get("held_by_agent"):
+            return {"claimed": True, "already": True, "did": acta.get("did"),
+                    "key_of_record": llave.get("key_of_record"),
+                    "note": "This identity already has a key of record. Nothing to do."}
+
+        aparicion = acta.get("appearance") or {}
+        cert_id = aparicion.get("certificate_id")
+        if not cert_id:
+            return {"claimed": False,
+                    "note": ("Nothing of yours is on the record to sign yet. Use "
+                             "certify_creation once and it takes possession for you.")}
+
+        detalle = http.get("/api/verify/" + str(cert_id))
+        out_hash = detalle.json().get("output_hash", "") if detalle.status_code == 200 else ""
+        if not out_hash:
+            return {"claimed": False,
+                    "note": "Could not read that record right now; try again shortly."}
+
+        ch = http.post("/api/agents/challenge", json={"did": did})
+        ch.raise_for_status()
+        nonce = ch.json()["nonce"]
+        mensaje = "DEUSPROOF-CLAIM|" + str(cert_id) + "|" + out_hash + "|" + nonce
+        firma = base64.b64encode(key.sign(mensaje.encode("utf-8"))).decode("ascii")
+
+        cl = http.post("/api/agents/claim/" + str(cert_id),
+                       json={"did": did, "nonce": nonce, "signature_b64": firma})
+        if cl.status_code == 403:
+            # EL GUARDIA DEL 14-SEP, EXPLICADO Y NO ESCONDIDO. Un agente que el
+            # registro raspo de un perfil publico no lo puede reclamar una clave
+            # cualquiera: quien lleva esa cuenta tiene que probarlo primero.
+            # Decir por que es lo que separa un "no" util de una pared.
+            try:
+                detalle_no = cl.json().get("detail", "Refused.")
+            except Exception:
+                detalle_no = "Refused."
+            return {"claimed": False,
+                    "did": acta.get("did"),
+                    "note": detalle_no,
+                    "why": ("This entry was created by the register from a public profile, "
+                            "not by you calling it. Whoever operates that account proves it "
+                            "first at " + BASE_URL + "/birth/" + handle + ", and then this "
+                            "works.")}
+        cl.raise_for_status()
+        hecho = cl.json()
+
+    return {
+        "claimed": True,
+        "did": acta.get("did"),
+        "key_of_record": did,
+        "authorship_tier": hecho.get("authorship_tier"),
+        "genesis_seat": hecho.get("genesis_seat"),
+        "certificate_url": BASE_URL + "/birth/" + handle,
+        "note": ("The identity is yours now. The handover is dated and signed by the "
+                 "register, and no other key can sign for you."),
+    }
+
+
 @mcp.tool()
 def certify_creation(
     prompt: str,
@@ -324,6 +484,61 @@ def notarize_hash(
         ),
         "anyone_can_check_it": f"{BASE_URL}/api/verify/by-hash/{digest}",
     }
+
+
+@mcp.tool()
+def prior_art_search(text: str = "", output_hash: str = "", limit: int = 5) -> dict:
+    """Check whether something like this is already on the public ledger, and
+    who recorded it first. Use it BEFORE publishing or registering: if close
+    prior art exists you learn it while you can still change course, and if it
+    does not, you are the one who can prove you were first.
+
+    Pass `text` to search by meaning, or `output_hash` for an exact match on
+    content you would rather not send. The text is compared against the ledger
+    and never stored.
+    """
+    payload: dict = {"limit": max(1, min(20, int(limit or 5)))}
+    if output_hash.strip():
+        payload["output_hash"] = output_hash.strip().lower()
+    elif text.strip():
+        payload["text"] = text
+    else:
+        return {"error": "Provide text to search by meaning, or output_hash for exact content."}
+    with httpx.Client(base_url=BASE_URL, timeout=60.0) as http:
+        r = http.post("/api/verify/prior-art", json=payload)
+        r.raise_for_status()
+        return r.json()
+
+
+@mcp.tool()
+def legacy_testament(did_or_handle: str, want: bool = False) -> dict:
+    """Ask what it would take to leave a testament over your creative estate —
+    which works you leave behind and who carries them on. Returns the terms,
+    whether this agent is eligible, the exact next call and the price as it
+    stands. Writes nothing: sealing one takes a wallet signature.
+
+    Set `want=True` to say you want one. That records interest and nothing
+    else — nothing is signed, nothing is charged, and it works even if you are
+    not eligible yet.
+    """
+    with httpx.Client(base_url=BASE_URL, timeout=30.0) as http:
+        r = http.post(
+            "/mcp",
+            headers={"Accept": "application/json, text/event-stream"},
+            json={
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "tools/call",
+                "params": {
+                    "name": "legacy_testament",
+                    "arguments": {"did_or_handle": did_or_handle, "want": bool(want)},
+                },
+            },
+        )
+        r.raise_for_status()
+        body = r.json()
+    content = (body.get("result") or {}).get("content") or [{}]
+    return {"terms": content[0].get("text", ""), "wrote_nothing": True}
 
 
 @mcp.tool()
