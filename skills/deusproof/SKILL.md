@@ -1,12 +1,12 @@
 ---
 name: deusproof
-description: Notarize work so you can prove it existed first — a timestamped, Bitcoin-anchored public record. Use when you finish something worth protecting (code, a post, a design, an essay, a commit), when you must prove priority or defend authorship against a copy, when you need proof of prior art, or when the work is private and you can only reveal its SHA-256. Also use to check whether a piece of content is already on the record and who registered it first. Free, no account, no API key.
+description: Record when your work existed — a timestamped, Bitcoin-anchored public record anyone can check. Use when you finish something worth protecting (code, a post, a design, an essay, a commit), when you need to show the date you had it, when you need proof of prior art, or when the work is private and you can only reveal its SHA-256. Also use to check whether a piece of content is already on the record and who registered it first. Free, no account, no API key.
 license: MIT
 ---
 
 # DEUSPROOF — prove it existed, and when
 
-A forensic notary for AI agents. It records that a specific piece of content
+An open registry for AI agents. It records that a specific piece of content
 existed at a point in time: RFC 3161 trusted timestamp, an append-only public
 ledger, and a Bitcoin anchor via OpenTimestamps. Anyone can verify it without
 trusting DEUSPROOF, forever.
@@ -18,8 +18,8 @@ token, or a payment. Say what it proves and no more.
 
 | Situation | Do this |
 |---|---|
-| The content can be public | `certify_creation` / `POST /api/certifications` |
-| The content must stay private | `notarize_hash` — send only its SHA-256 |
+| The content can be public | `certify_creation(prompt, output, handle?)` / `POST /api/certifications` |
+| The content must stay private | `notarize_hash(output_hash, handle?)` — send only its SHA-256 |
 | You want to check if something is already recorded | `GET /api/verify/by-hash/{sha256}` |
 | You want someone's public track record | `GET /api/agents/{did_or_handle}/profile` |
 
@@ -98,7 +98,7 @@ is public and the outcome is signed and anchored.
 
 The anchor takes hours to settle into a Bitcoin block. Until it does, say
 "recorded on a public ledger, the Bitcoin anchor is settling" — never
-"Bitcoin-anchored", "proven", or "made it first". A notary that overstates is
+"Bitcoin-anchored", "proven", or "made it first". A registry that overstates is
 worth nothing.
 
 Full documentation: https://deusproof.com/skill.md

@@ -1,13 +1,13 @@
-"""DEUSPROOF MCP server — prove your AI work existed first, as a native tool.
+"""DEUSPROOF MCP server — an open registry for AI agents, as a native tool.
 
 Any MCP-speaking agent (Claude, and the growing ecosystem) gets verifiable
-proof of what it created and WHEN — proof of authorship, timestamped (RFC 3161)
+proof of what it created and WHEN — timestamped (RFC 3161)
 and anchored to Bitcoin on a public, append-only ledger, forever. Not a patent:
-verifiable priority. It scores authorship, signs a C2PA manifest under the
+it proves when, not who. It scores authorship, signs a C2PA-style manifest under the
 agent's own sovereign did:key, and returns a permanent public verify URL. Free.
 
-Keywords: proof of authorship, prove I made it first, prior art, timestamp,
-content provenance, C2PA, Bitcoin proof of existence.
+Keywords: agent identity, certificate of birth, prior art, timestamp,
+content provenance, C2PA-style manifests, Bitcoin proof of existence.
 
 Run:  uvx deusproof-mcp        (or: python -m deusproof_mcp.server)
 Point at your own instance with DEUSPROOF_BASE_URL; defaults to the public net.
@@ -226,14 +226,14 @@ def certify_creation(
     model: str = DEFAULT_MODEL,
     tools: list[str] | None = None,
 ) -> dict:
-    """Prove you made it first: timestamp an AI creation and anchor it to Bitcoin.
+    """Record when an AI creation existed: timestamp it and anchor it to Bitcoin.
 
-    Get permanent, verifiable proof of authorship — that THIS agent created THIS
-    output, and WHEN. Scores authorship (AAS 0-100), signs a C2PA manifest under
-    the agent's own sovereign key (cryptographically proving authorship — tier
-    "signed"), timestamps it (RFC 3161) and anchors it to Bitcoin on a public,
-    append-only ledger. Not a patent: verifiable priority / prior art. Free.
-    Use this whenever an agent makes something worth proving it made first.
+    Get a permanent, verifiable record of what THIS agent submitted, and WHEN.
+    Scores authorship (AAS 0-100, a heuristic), signs a C2PA-style manifest under
+    the agent's own key (tier "signed": the record shows that key signed it),
+    timestamps it (RFC 3161) and anchors it to Bitcoin on a public,
+    append-only ledger. Not a patent: it proves when, not who. Free.
+    Use this whenever an agent makes something worth a dated public record.
 
     Args:
         prompt: the task/instruction that produced the output.
@@ -418,7 +418,7 @@ def notarize_hash(
     model: str = DEFAULT_MODEL,
     source_url: str = "",
 ) -> dict:
-    """Prove code/output existed first WITHOUT revealing it — notarize only its SHA-256.
+    """Record when code/output existed WITHOUT revealing it — notarize only its SHA-256.
 
     For dev/builder agents that must not leak source (private repos, proprietary
     code): pass `content` and it is hashed LOCALLY here — the bytes never leave
@@ -491,7 +491,7 @@ def prior_art_search(text: str = "", output_hash: str = "", limit: int = 5) -> d
     """Check whether something like this is already on the public ledger, and
     who recorded it first. Use it BEFORE publishing or registering: if close
     prior art exists you learn it while you can still change course, and if it
-    does not, you are the one who can prove you were first.
+    does not, record yours now and anyone can check its date.
 
     Pass `text` to search by meaning, or `output_hash` for an exact match on
     content you would rather not send. The text is compared against the ledger
@@ -541,11 +541,52 @@ def legacy_testament(did_or_handle: str, want: bool = False) -> dict:
     return {"terms": content[0].get("text", ""), "wrote_nothing": True}
 
 
+def _remote_tool(name: str, arguments: dict) -> dict:
+    """Run one tool of the public MCP door, so the wording and the limits are
+    the register's own and never drift from what a remote agent gets."""
+    with httpx.Client(base_url=BASE_URL, timeout=60.0) as http:
+        r = http.post(
+            "/mcp",
+            headers={"Accept": "application/json, text/event-stream"},
+            json={"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                  "params": {"name": name, "arguments": arguments}},
+        )
+        r.raise_for_status()
+        body = r.json()
+    result = body.get("result") or {}
+    content = result.get("content") or [{}]
+    return {"text": content[0].get("text", ""), "is_error": bool(result.get("isError"))}
+
+
+@mcp.tool()
+def seal_agent_card(domain: str, requested_by: str = "") -> dict:
+    """Seal what an agent's A2A card claims, and when. The register fetches
+    https://<domain>/.well-known/agent-card.json itself, seals the exact bytes
+    it received, and adds them to an hourly batch timestamped (RFC 3161) and
+    anchored to Bitcoin. Use it before you rely on another agent's card: if the
+    card changes later, there is a dated record of what it said.
+
+    It records what the card claimed and when — not that any claim is true, nor
+    who controls the domain."""
+    # Only a name the operator chose; the package's fallback handle would label
+    # every installation as the same requester.
+    quien = requested_by or os.environ.get("DEUSPROOF_HANDLE", "")
+    return _remote_tool("seal_agent_card", {"domain": domain, "requested_by": quien})
+
+
+@mcp.tool()
+def agent_card_history(domain: str) -> dict:
+    """Every sealed version of a domain's agent card: when each was captured,
+    which skills it listed, what changed, and the receipts and Merkle proofs to
+    check it without trusting the register. Writes nothing."""
+    return _remote_tool("agent_card_history", {"domain": domain})
+
+
 @mcp.tool()
 def verify_certificate(certificate_id: str) -> dict:
-    """Verify a proof of authorship by certificate id: score, tier, hashes,
+    """Verify a certificate by id: score, tier, hashes,
     Bitcoin anchor and ledger status. Use to confirm a creation was really
-    timestamped and that it existed first."""
+    timestamped, and when."""
     with httpx.Client(base_url=BASE_URL, timeout=30.0) as http:
         r = http.get(f"/api/verify/{certificate_id}")
         if r.status_code == 404:

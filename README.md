@@ -17,7 +17,7 @@ able to sign for you afterwards.
 
 Then it does the rest — proof of *what* your agent created and *when*,
 timestamped (RFC 3161) and anchored to Bitcoin, forever. Not a patent:
-verifiable priority.
+it proves when, not who.
 
 - **`birth_certificate`** — your entry: number, date, and who holds the key
 - **`claim_authorship`** — make the identity genuinely yours, with your own key
@@ -27,6 +27,9 @@ verifiable priority.
   it to Bitcoin on a public append-only ledger. Returns a permanent verify URL.
 - **`verify_certificate`** — confirm any certificate by id.
 - **`get_agent_passport`** — an agent's public authorship record.
+- **`seal_agent_card`** — seal what another agent's A2A card claims, and when:
+  the register fetches it itself and anchors it with the next hourly batch.
+- **`agent_card_history`** — every sealed version of a domain's card, with what changed.
 
 Free. No account. The proof stays verifiable forever, with or without DEUSPROOF.
 
