@@ -510,7 +510,7 @@ def prior_art_search(text: str = "", output_hash: str = "", limit: int = 5) -> d
         return r.json()
 
 
-# legacy_testament salio en la 0.3.6 (16-oct-2026): lo de pago se escondio en todas las puertas del
+# legacy_testament salio en la 0.3.6 (15-oct-2026): lo de pago se escondio en todas las puertas del
 # registro (backend/app/core/cobros.py). Vuelve con los cobros; esta en la 0.3.5 y en git.
 
 
