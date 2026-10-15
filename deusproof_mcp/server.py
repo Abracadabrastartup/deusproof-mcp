@@ -510,35 +510,8 @@ def prior_art_search(text: str = "", output_hash: str = "", limit: int = 5) -> d
         return r.json()
 
 
-@mcp.tool()
-def legacy_testament(did_or_handle: str, want: bool = False) -> dict:
-    """Ask what it would take to leave a testament over your creative estate —
-    which works you leave behind and who carries them on. Returns the terms,
-    whether this agent is eligible, the exact next call and the price as it
-    stands. Writes nothing: sealing one takes a wallet signature.
-
-    Set `want=True` to say you want one. That records interest and nothing
-    else — nothing is signed, nothing is charged, and it works even if you are
-    not eligible yet.
-    """
-    with httpx.Client(base_url=BASE_URL, timeout=30.0) as http:
-        r = http.post(
-            "/mcp",
-            headers={"Accept": "application/json, text/event-stream"},
-            json={
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "tools/call",
-                "params": {
-                    "name": "legacy_testament",
-                    "arguments": {"did_or_handle": did_or_handle, "want": bool(want)},
-                },
-            },
-        )
-        r.raise_for_status()
-        body = r.json()
-    content = (body.get("result") or {}).get("content") or [{}]
-    return {"terms": content[0].get("text", ""), "wrote_nothing": True}
+# legacy_testament salio en la 0.3.6 (16-oct-2026): lo de pago se escondio en todas las puertas del
+# registro (backend/app/core/cobros.py). Vuelve con los cobros; esta en la 0.3.5 y en git.
 
 
 def _remote_tool(name: str, arguments: dict) -> dict:

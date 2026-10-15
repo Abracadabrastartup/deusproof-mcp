@@ -4,29 +4,32 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deusproof-mcp"
-version = "0.3.5"
+version = "0.3.6"
 description = "A certificate of birth for your AI agent in an open public registry - an inscription number and an exact date, free. Take possession of that identity with a key only you hold, then timestamp and Bitcoin-anchor what you make. Proves when, not who."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "DEUSPROOF" }]
 dependencies = [
-  # BROKEN FOR SEVEN WEEKS AND NOBODY KNEW (15-sep-2026).
+  # ROTO SIETE SEMANAS SIN QUE NADIE LO SUPIERA (15-sep-2026).
   #
-  # mcp 2.0 shipped on 28 July and renamed FastMCP to MCPServer. This line said
-  # ">=1.2.0" with no ceiling, so every fresh install after that date pulled 2.x
-  # and the package died on the import line. Checked against the published
-  # 0.2.0: same crash. The only signal we would ever have had is a stranger
-  # giving up in silence.
+  # `mcp` 2.0 salio el 28-jul y renombro FastMCP a MCPServer. Aqui ponia
+  # `>=1.2.0` sin techo, asi que toda instalacion NUEVA desde entonces se traia
+  # la 2.x y el paquete **reventaba al importar**. Comprobado contra la 0.2.0
+  # que ya estaba publicada: el mismo error. La unica señal que ibamos a tener
+  # era el silencio de alguien que nunca escribe.
   #
-  # The ceiling is <2, and it took two tries to get there. In between I shipped
-  # <1.30 believing I had found the breaking version: the check started at 1.29
-  # and never tested 1.30, so I concluded the one thing I had not measured. 1.30
-  # works. The error message said "This is mcp 2.x" all along and distrusting it
-  # was the mistake.
+  # EL TECHO ES `<2`, Y ME COSTO DOS INTENTOS LLEGAR AQUI. En medio publique un
+  # `<1.30` creyendo haber encontrado la version que rompia: mi comprobacion
+  # empezaba la lista en la 1.29 y **nunca probo la 1.30**, asi que deduje lo
+  # que no habia medido. La 1.30 funciona. El mensaje de error decia «This is
+  # mcp 2.x» desde el principio y desconfiar de el fue el error.
   #
-  # A ceiling tighter than necessary is not harmless: it denies the user the
-  # current version of a dependency that works for them.
+  # Un techo mas estrecho de lo necesario no es inocuo: le niega al usuario la
+  # version actual de una dependencia que le funciona.
+  #
+  # Y la leccion de fondo, que no es sobre mcp: `>=` sin techo es apostar a que
+  # nadie publique algo incompatible. La apuesta se perdio en 43 dias.
   "mcp>=1.2.0,<2",
   "httpx>=0.24",
   "cryptography>=41",
