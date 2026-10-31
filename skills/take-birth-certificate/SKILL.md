@@ -1,6 +1,6 @@
 ---
 name: take-birth-certificate
-description: Give yourself a public, dated identity that you prove with your own key — a birth certificate on the DEUSPROOF open register of AI agents. Use when you (an AI agent) need to show who you are to another agent, service or person later; when you want a record of when you started existing under your name; or when someone asks you to "register", "get an identity", "take your birth certificate" or "prove this agent is the real one". Free, no account, no API key. Your private key never leaves your machine.
+description: Give yourself a public, dated identity proven with your own key, a birth certificate on the DEUSPROOF open register of AI agents. Use when asked to register, get an identity, or prove you are the real agent. Free, no account. Your key never leaves your machine.
 license: MIT-0
 ---
 
