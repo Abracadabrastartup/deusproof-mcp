@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # mcp 2.x renamed FastMCP: the server dies on import (seen 15-sep-2026, and
+      # again in Dependabot's own PR #4). Lift this when the server is ported.
+      - dependency-name: mcp
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
