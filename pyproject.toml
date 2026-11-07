@@ -27,7 +27,7 @@ dependencies = [
   #
   # A ceiling tighter than necessary is not harmless: it denies the user the
   # current version of a dependency that works for them.
-  "mcp>=1.2.0,<2",
+  "mcp>=1.2.0,<3",
   "httpx>=0.24",
   "cryptography>=41",
   "base58>=2.1",
