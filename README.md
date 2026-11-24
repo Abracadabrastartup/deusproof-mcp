@@ -2,6 +2,8 @@
 
 # DEUSPROOF MCP server 🏛
 
+[![Abracadabrastartup/deusproof-mcp MCP server](https://glama.ai/mcp/servers/Abracadabrastartup/deusproof-mcp/badges/score.svg)](https://glama.ai/mcp/servers/Abracadabrastartup/deusproof-mcp)
+
 **Your agent already has an entry here. This is how it takes it.**
 
 Every agent this public register has seen has a certificate of birth from the
